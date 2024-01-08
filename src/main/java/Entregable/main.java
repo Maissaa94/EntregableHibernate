@@ -101,7 +101,7 @@ public class main {
     }
 
     public static void hay(ProductoPojo pr, String comando) {
-        if (!comando.matches("^usar [a-zA-Z ]+$")) {
+        if (!comando.matches("^hay [a-zA-Z ]+$")) {
             System.out.println("Formato de comando incorrecto. Debe ser 'hay <producto>'");
             return;  // Salir del método si el formato no es correcto
         }
@@ -116,8 +116,8 @@ public class main {
     }
 
     public static void adquirir(ProductoPojo pr, String comando) {
-        if (!comando.matches("^usar \\d+ [a-zA-Z ]+$")) {
-            System.out.println("Formato de comando incorrecto. Debe ser 'usar <cantidad> <producto>'");
+        if (!comando.matches("^adquirir \\d+ [a-zA-Z ]+$")) {
+            System.out.println("Formato de comando incorrecto. Debe ser 'adquirir <cantidad> <producto>'");
             return;  // Salir del método si el formato no es correcto
         }
         String[] partes = comando.split(" ", 3);
