@@ -17,7 +17,7 @@ public interface ProductoDAO {
 
     public void updateProduct(Producto pr);
 
-    public Producto getProductByName(String name);
+    public List<Producto> getProductByName(String name);
 
     public List<Producto> getAllProduct();
 

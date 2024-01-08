@@ -46,27 +46,30 @@ public class main {
     }
 
     public static void cargarDatos() {
-        try {
-            ProductoPojo pr = new ProductoPojo();
-            if (pr.getAllProduct().isEmpty()) {
-                List<Producto> productos = LeerCSV.cargarDatosDesdeCSV("compra.csv");
-                for (Producto producto : productos) {
-                    // Verificar si el producto ya existe en la base de datos por su nombre
-                    Producto productoExistente = pr.getProductByName(producto.getName());
-                    if (productoExistente == null) {
-                        // El producto no existe, realizar inserción
-                        pr.addProduct(producto);
-                    } else {
-                        // El producto ya existe, realizar actualización sumando las cantidades
-                        productoExistente.setCantidad(productoExistente.getCantidad() + producto.getCantidad());
-                        pr.updateProduct(productoExistente);
-                    }
+    try {
+        ProductoPojo pr = new ProductoPojo();
+        if (pr.getAllProduct().isEmpty()) {
+            List<Producto> productos = LeerCSV.cargarDatosDesdeCSV("compra.csv");
+            for (Producto producto : productos) {
+                // Verificar si el producto ya existe en la base de datos por su nombre
+                List<Producto> productosExistente = pr.getProductByName(producto.getName());
+                
+                if (productosExistente.isEmpty()) {
+                    // El producto no existe, realizar inserción
+                    pr.addProduct(producto);
+                } else {
+                    // El producto ya existe, realizar actualización sumando las cantidades
+                    Producto productoExistente = productosExistente.get(0); // Tomar el primer resultado, asumiendo que el nombre es único
+                    productoExistente.setCantidad(productoExistente.getCantidad() + producto.getCantidad());
+                    pr.updateProduct(productoExistente);
                 }
             }
-        } catch (IOException | SQLException error) {
-            System.err.println(error);
         }
+    } catch (IOException | SQLException error) {
+        System.err.println(error);
     }
+}
+
 
     public static void listar(ProductoPojo pr) {
         for (Producto producto : pr.getAllProduct()) {
@@ -74,61 +77,87 @@ public class main {
         }
     }
 
-    public static void usar(ProductoPojo pr, String comando) {
-        // matches realiza un coincidir con (Validar el formato del comando) 
-        if (!comando.matches("^usar \\d+ [a-zA-Z ]+$")) {
-            System.out.println("Formato de comando incorrecto. Debe ser 'usar <cantidad> <producto>'");
-            return;  // Salir del método si el formato no es correcto
-        }
-        String[] partes = comando.split(" ", 3);
-        String producto = partes[2];
-        int x = Integer.parseInt(partes[1]);
-        Producto productoExistente = pr.getProductByName(producto);
-        if (productoExistente != null) {
-            if (productoExistente.getCantidad() < x) {
-                System.out.println("No hay Stock suficiente.");
-            } else if (productoExistente.getCantidad() == x) {
-                pr.deletProduct(productoExistente.getId());
-                System.out.println("producto eliminado");
-            } else {
-                productoExistente.setCantidad(productoExistente.getCantidad() - x);
-                pr.updateProduct(productoExistente);
-            }
-        } else {
-            System.out.println("El producto no existe.");
-        }
-
+   public static void usar(ProductoPojo pr, String comando) {
+    if (!comando.matches("^usar \\d+ [a-zA-Z ]+$")) {
+        System.out.println("Formato de comando incorrecto. Debe ser 'usar <cantidad> <producto>'");
+        return;  // Salir del método si el formato no es correcto
     }
+
+    String[] partes = comando.split(" ", 3);
+    int cantidad = Integer.parseInt(partes[1]);
+    String productoNombre = partes[2].trim(); // Asegurarse de quitar espacios alrededor del nombre del producto
+
+    if (cantidad <= 0) {
+        System.out.println("La cantidad debe ser un número entero positivo.");
+        return;
+    }
+
+    List<Producto> productosEncontrados = pr.getProductByName(productoNombre);
+
+    if (!productosEncontrados.isEmpty()) {
+        Producto productoExistente = productosEncontrados.get(0); // Tomar el primer resultado, asumiendo que el nombre es único
+        if (productoExistente.getCantidad() < cantidad) {
+            System.out.println("No hay Stock suficiente.");
+        } else if (productoExistente.getCantidad() == cantidad) {
+            pr.deletProduct(productoExistente.getId());
+            System.out.println("Producto eliminado");
+        } else {
+            productoExistente.setCantidad(productoExistente.getCantidad() - cantidad);
+            pr.updateProduct(productoExistente);
+        }
+    } else {
+        System.out.println("El producto no existe.");
+    }
+}
+
 
     public static void hay(ProductoPojo pr, String comando) {
-        if (!comando.matches("^hay [a-zA-Z ]+$")) {
-            System.out.println("Formato de comando incorrecto. Debe ser 'hay <producto>'");
-            return;  // Salir del método si el formato no es correcto
-        }
-        String[] partes = comando.split(" ", 2);
-        String producto = partes[1];
-        Producto productoExistente = pr.getProductByName(producto);
-        if (productoExistente == null) {
-            System.out.println("El producto no existe.");
-        } else {
-            System.out.println("Cantidad restante : " + productoExistente.getCantidad());
-        }
+    if (!comando.matches("^hay [a-zA-Z ]+$")) {
+        System.out.println("Formato de comando incorrecto. Debe ser 'hay <producto>'");
+        return;  // Salir del método si el formato no es correcto
     }
 
-    public static void adquirir(ProductoPojo pr, String comando) {
-        if (!comando.matches("^adquirir \\d+ [a-zA-Z ]+$")) {
-            System.out.println("Formato de comando incorrecto. Debe ser 'adquirir <cantidad> <producto>'");
-            return;  // Salir del método si el formato no es correcto
+    String[] partes = comando.split(" ", 2);
+    String producto = partes[1].trim(); // Asegurarse de quitar espacios alrededor del nombre del producto
+
+    List<Producto> productosEncontrados = pr.getProductByName(producto);
+
+    if (productosEncontrados.isEmpty()) {
+        System.out.println("El producto no existe.");
+    } else {
+        // Si hay múltiples resultados, puedes iterar sobre la lista
+        for (Producto productoExistente : productosEncontrados) {
+            System.out.println("Cantidad restante para '" + productoExistente.getName() + "': " + productoExistente.getCantidad());
         }
-        String[] partes = comando.split(" ", 3);
-        String producto = partes[2];
-        int x = Integer.parseInt(partes[1]);
-        Producto productoExistente = pr.getProductByName(producto);
-        if (productoExistente == null) {
-            pr.addProduct(new Producto(x, producto));
-        } else {
-            productoExistente.setCantidad(productoExistente.getCantidad() + x);
+    }
+}
+
+ public static void adquirir(ProductoPojo pr, String comando) {
+    if (!comando.matches("^adquirir \\d+ [a-zA-Z ]+$")) {
+        System.out.println("Formato de comando incorrecto. Debe ser 'adquirir <cantidad> <producto>'");
+        return;  // Salir del método si el formato no es correcto
+    }
+
+    String[] partes = comando.split(" ", 3);
+    int cantidad = Integer.parseInt(partes[1]);
+    String productoNombre = partes[2].trim(); // Asegurarse de quitar espacios alrededor del nombre del producto
+
+    if (cantidad <= 0) {
+        System.out.println("La cantidad debe ser un número entero positivo.");
+        return;
+    }
+
+    List<Producto> productosEncontrados = pr.getProductByName(productoNombre);
+
+    if (productosEncontrados.isEmpty()) {
+        pr.addProduct(new Producto(cantidad, productoNombre));
+    } else {
+        // Si hay múltiples resultados, puedes iterar sobre la lista
+        for (Producto productoExistente : productosEncontrados) {
+            productoExistente.setCantidad(productoExistente.getCantidad() + cantidad);
             pr.updateProduct(productoExistente);
         }
     }
+}
+
 }

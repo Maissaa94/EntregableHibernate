@@ -54,11 +54,11 @@ public class ProductoPojo implements ProductoDAO{
     }
 
     @Override
-    public Producto getProductByName(String name) {
+    public List<Producto> getProductByName(String name) {
     try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-        Query<Producto> query = session.createQuery("FROM Producto WHERE name = :value", Producto.class);
-        query.setParameter("value", name);
-        return query.uniqueResult(); // asumimos que el nombre es único, si no, usa getResultList y maneja la lista
+        Query<Producto> query = session.createQuery("FROM Producto WHERE name LIKE :value", Producto.class);
+        query.setParameter("value","%"+ name+"%");
+        return query.getResultList();// asumimos que el nombre es único, si no, usa getResultList y maneja la lista
     } catch (HibernateException e) {
         System.err.println(e);
         return null;
